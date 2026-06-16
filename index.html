@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Password Central</title>
+  <style>
+    :root {
+      --bg:        #dcdcdc;
+      --surface:   #9c9c9c;
+      --border:    #2a2f42;
+      --accent:    #6c8fff;
+      --accent-dim:#dcdcdc;
+      --danger:    #ff5f6d;
+      --text:      #3a3a3a;
+      --muted:     #525252;
+      --mono:      'Helvetica', 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+      --sans:      'Inter', system-ui, sans-serif;
+
+      --vw: #ff5f6d; --w: #ff9a3c; --m: #f4d03f;
+      --s: #5dda87;  --vs: #00e5a0;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1rem 4rem;
+      gap: 2rem;
+    }
+
+    header {
+      text-align: center;
+    }
+    header h1 {
+      font-family: var(--mono);
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
+      letter-spacing: -.03em;
+      color: var(--accent);
+    }
+    header p {
+      color: var(--muted);
+      font-size: .9rem;
+      margin-top: .35rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: .5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: .35rem;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-family: var(--sans);
+      font-size: .9rem;
+      padding: .5rem 1.25rem;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    .tab-btn:hover  { color: var(--text); }
+    .tab-btn.active { background: var(--accent-dim); color: var(--text); }
+
+    .card {
+      width: 100%;
+      max-width: 540px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+    }
+
+    .panel { display: none; flex-direction: column; gap: 1.1rem; }
+    .panel.active { display: flex; }
+
+    label {
+      font-size: .78rem;
+      color: var(--muted);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .field { display: flex; flex-direction: column; gap: .4rem; }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="number"] {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: .95rem;
+      padding: .65rem .85rem;
+      outline: none;
+      transition: border-color .15s;
+      width: 100%;
+    }
+    input:focus { border-color: var(--accent); }
+
+    .pwd-row {
+      display: flex;
+      gap: .5rem;
+      align-items: center;
+    }
+    .pwd-row input { flex: 1; }
+
+    .btn {
+      background: var(--accent-dim);
+      border: none;
+      color: var(--text);
+      cursor: pointer;
+      font-family: var(--sans);
+      font-size: .9rem;
+      font-weight: 600;
+      padding: .65rem 1.25rem;
+      transition: background .15s, transform .08s;
+      white-space: nowrap;
+    }
+    .btn:hover   { background: var(--accent); }
+    .btn:active  { transform: scale(.97); }
+    .btn.danger  { background: #3d1a1e; color: var(--danger); }
+    .btn.danger:hover { background: var(--danger); color: #fff; }
+    .btn.full    { width: 100%; }
+    .btn.icon    { padding: .65rem .8rem; font-size: 1rem; }
+
+    .strength-row {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+    .strength-bar {
+      flex: 1;
+      height: 6px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .strength-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width .3s, background .3s;
+      width: 0;
+    }
+    .strength-label {
+      font-family: var(--mono);
+      font-size: .78rem;
+      min-width: 72px;
+      text-align: right;
+    }
+
+    .suggestions {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: .3rem;
+    }
+    .suggestions li {
+      font-size: .83rem;
+      color: var(--muted);
+      padding-left: 1rem;
+      position: relative;
+    }
+    .suggestions li::before {
+      content: "›";
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+    }
+
+    .vault-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .vault-header h2 { font-size: 1rem; }
+    .vault-list { display: flex; flex-direction: column; gap: .6rem; }
+    .vault-entry {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: .75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+    .vault-entry-info { flex: 1; min-width: 0; }
+    .vault-entry-user {
+      font-weight: 600;
+      font-size: .9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .vault-entry-pwd {
+      font-family: var(--mono);
+      font-size: .82rem;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: .05em;
+    }
+    .vault-empty {
+      text-align: center;
+      color: var(--muted);
+      font-size: .88rem;
+      padding: 1.5rem 0;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(1rem);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: .65rem 1.25rem;
+      font-size: .88rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s, transform .2s;
+      z-index: 99;
+      white-space: nowrap;
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent);
+    }
+    .slider-val {
+      font-family: var(--mono);
+      font-size: .88rem;
+      min-width: 28px;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Password Central</h1>
+  <p>Generate · Review · Store</p>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="generate">Generate</button>
+  <button class="tab-btn"        data-tab="review">Review</button>
+  <button class="tab-btn"        data-tab="vault">Vault</button>
+</div>
+
+<div class="card">
+
+  <div class="panel active" id="tab-generate">
+    <div class="field">
+      <label>Password length</label>
+      <div class="slider-row">
+        <input type="range" id="gen-length" min="8" max="40" value="12" />
+        <span class="slider-val" id="gen-length-val">12</span>
+      </div>
+    </div>
+
+    <button class="btn full" id="gen-btn">Generate password</button>
+
+    <div class="field" id="gen-result-block" style="display:none">
+      <label>Generated password</label>
+      <div class="pwd-row">
+        <input type="text" id="gen-output" readonly />
+        <button class="btn icon" id="gen-copy" title="Copy">⎘</button>
+      </div>
+      <div class="strength-row">
+        <div class="strength-bar"><div class="strength-bar-fill" id="gen-bar"></div></div>
+        <span class="strength-label" id="gen-strength-lbl"></span>
+      </div>
+    </div>
+
+    <div id="gen-save-block" style="display:none">
+      <div class="field">
+        <label>Save to vault — username / account</label>
+        <input type="text" id="gen-username" placeholder="e.g. github · work email" />
+      </div>
+      <button class="btn full" id="gen-save-btn">Save to vault</button>
+    </div>
+  </div>
+
+  <div class="panel" id="tab-review">
+    <div class="field">
+      <label>Your password</label>
+      <input type="text" id="rev-input" placeholder="Paste or type a password…" />
+    </div>
+
+    <button class="btn full" id="rev-btn">Check strength</button>
+
+    <div id="rev-result-block" style="display:none">
+      <div class="field">
+        <div class="strength-row">
+          <div class="strength-bar"><div class="strength-bar-fill" id="rev-bar"></div></div>
+          <span class="strength-label" id="rev-strength-lbl"></span>
+        </div>
+      </div>
+      <ul class="suggestions" id="rev-suggestions"></ul>
+    </div>
+
+    <div id="rev-save-block" style="display:none">
+      <div class="field">
+        <label>Save to vault — username / account</label>
+        <input type="text" id="rev-username" placeholder="e.g. netflix · personal email" />
+      </div>
+      <button class="btn full" id="rev-save-btn">Save to vault</button>
+    </div>
+  </div>
+
+  <div class="panel" id="tab-vault">
+    <div class="vault-header">
+      <h2>Saved passwords</h2>
+      <button class="btn" id="vault-refresh-btn">↺ Refresh</button>
+    </div>
+    <div class="vault-list" id="vault-list">
+      <p class="vault-empty">Loading…</p>
+    </div>
+  </div>
+
+</div><!-- /card -->
+
+<div id="toast"></div>
+
+<script>
+
+  function toast(msg, duration = 2400) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), duration);
+  }
+
+  const STRENGTH_CONFIG = {
+    "Very Weak": { pct: 12,  color: "var(--vw)" },
+    "Weak":      { pct: 30,  color: "var(--w)"  },
+    "Medium":    { pct: 55,  color: "var(--m)"  },
+    "Strong":    { pct: 78,  color: "var(--s)"  },
+    "Very Strong":{ pct: 100, color: "var(--vs)" },
+  };
+
+  function applyStrength(bar, label, strength) {
+    const cfg = STRENGTH_CONFIG[strength] || STRENGTH_CONFIG["Very Weak"];
+    bar.style.width    = cfg.pct + "%";
+    bar.style.background = cfg.color;
+    label.textContent  = strength;
+    label.style.color  = cfg.color;
+  }
+
+  async function api(path, opts = {}) {
+    const res = await fetch(path, opts);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "Request failed");
+    }
+    return res.json();
+  }
+
+
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+      if (btn.dataset.tab === "vault") loadVault();
+    });
+  });
+
+
+  const lenSlider = document.getElementById("gen-length");
+  const lenVal    = document.getElementById("gen-length-val");
+  lenSlider.addEventListener("input", () => lenVal.textContent = lenSlider.value);
+
+  document.getElementById("gen-btn").addEventListener("click", async () => {
+    try {
+      const data = await api(`/api/generate?length=${lenSlider.value}`);
+      document.getElementById("gen-output").value = data.password;
+      applyStrength(
+        document.getElementById("gen-bar"),
+        document.getElementById("gen-strength-lbl"),
+        data.strength
+      );
+      document.getElementById("gen-result-block").style.display = "";
+      document.getElementById("gen-save-block").style.display   = "";
+    } catch (e) { toast("⚠ " + e.message); }
+  });
+
+  document.getElementById("gen-copy").addEventListener("click", () => {
+    const pwd = document.getElementById("gen-output").value;
+    if (!pwd) return;
+    navigator.clipboard.writeText(pwd).then(() => toast("Copied to clipboard"));
+  });
+
+  document.getElementById("gen-save-btn").addEventListener("click", async () => {
+    const username = document.getElementById("gen-username").value.trim();
+    const password = document.getElementById("gen-output").value;
+    if (!username) { toast("Enter a username first."); return; }
+    try {
+      await api("/api/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      toast("✓ Saved to vault");
+      document.getElementById("gen-username").value = "";
+    } catch (e) { toast("⚠ " + e.message); }
+  });
+
+
+  document.getElementById("rev-btn").addEventListener("click", async () => {
+    const password = document.getElementById("rev-input").value;
+    if (!password) { toast("Enter a password to review."); return; }
+    try {
+      const data = await api("/api/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      applyStrength(
+        document.getElementById("rev-bar"),
+        document.getElementById("rev-strength-lbl"),
+        data.strength
+      );
+      const ul = document.getElementById("rev-suggestions");
+      ul.innerHTML = data.suggestions.length
+        ? data.suggestions.map(s => `<li>${s}</li>`).join("")
+        : `<li style="color:var(--vs)">Looks good — no improvements needed.</li>`;
+      document.getElementById("rev-result-block").style.display = "";
+      document.getElementById("rev-save-block").style.display   = "";
+    } catch (e) { toast("⚠ " + e.message); }
+  });
+
+  document.getElementById("rev-save-btn").addEventListener("click", async () => {
+    const username = document.getElementById("rev-username").value.trim();
+    const password = document.getElementById("rev-input").value;
+    if (!username) { toast("Enter a username first."); return; }
+    try {
+      await api("/api/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      toast("✓ Saved to vault");
+      document.getElementById("rev-username").value = "";
+    } catch (e) { toast("⚠ " + e.message); }
+  });
+
+
+  async function loadVault() {
+    const list = document.getElementById("vault-list");
+    list.innerHTML = `<p class="vault-empty">Loading…</p>`;
+    try {
+      const entries = await api("/api/passwords");
+      if (!entries.length) {
+        list.innerHTML = `<p class="vault-empty">No saved passwords yet.</p>`;
+        return;
+      }
+      list.innerHTML = entries.map(e => `
+        <div class="vault-entry" id="entry-${e.id}">
+          <div class="vault-entry-info">
+            <div class="vault-entry-user">${escHtml(e.username)}</div>
+            <div class="vault-entry-pwd" data-id="${e.id}" data-hidden="true">••••••••••••</div>
+          </div>
+          <button class="btn icon" onclick="togglePwd(${e.id}, '${escHtml(e.password)}')" title="Show/hide">👁</button>
+          <button class="btn icon" onclick="copyEntry('${escHtml(e.password)}')" title="Copy">⎘</button>
+          <button class="btn icon danger" onclick="deleteEntry(${e.id})" title="Delete">✕</button>
+        </div>
+      `).join("");
+    } catch (e) { list.innerHTML = `<p class="vault-empty">Failed to load.</p>`; }
+  }
+
+  function escHtml(s) {
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  function togglePwd(id, plain) {
+    const el = document.querySelector(`.vault-entry-pwd[data-id="${id}"]`);
+    if (!el) return;
+    const hidden = el.dataset.hidden === "true";
+    el.textContent = hidden ? plain : "••••••••••••";
+    el.dataset.hidden = hidden ? "false" : "true";
+  }
+
+  function copyEntry(plain) {
+    navigator.clipboard.writeText(plain).then(() => toast("Copied to clipboard"));
+  }
+
+  async function deleteEntry(id) {
+    try {
+      await api(`/api/passwords/${id}`, { method: "DELETE" });
+      document.getElementById("entry-" + id)?.remove();
+      const list = document.getElementById("vault-list");
+      if (!list.children.length)
+        list.innerHTML = `<p class="vault-empty">No saved passwords yet.</p>`;
+      toast("Entry deleted.");
+    } catch (e) { toast("⚠ " + e.message); }
+  }
+
+  document.getElementById("vault-refresh-btn").addEventListener("click", loadVault);
+</script>
+</body>
+</html>
