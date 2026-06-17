@@ -6,25 +6,25 @@
   <title>Password Central</title>
   <style>
     :root {
-      --bg:        #07078f;
-      --surface:   #9c9c9c;
-      --border:    #2a2f42;
-      --accent:    #6c8fff;
-      --accent-dim:#dcdcdc;
-      --danger:    #cfd0d3;
-      --text:      #000000;
-      --muted:     #bebaba;
-      --mono:      'Helvetica', 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
-      --sans:      'Inter', system-ui, sans-serif;
+      --bg:        #f0f4f9;
+      --surface:   #ffffff;
+      --border:    #d1d9e6;
+      --accent:    #1e90ff;
+      --accent-dim:#4a90e2;
+      --danger:    #ff4757;
+      --text:      #1a1a2e;
+      --muted:     #6c757d;
+      --mono:      'Courier New', 'JetBrains Mono', 'Fira Code', monospace;
+      --sans:      'Segoe UI', 'Inter', system-ui, sans-serif;
 
-      --vw: #ff5f6d; --w: #ff9a3c; --m: #f4d03f;
-      --s: #5dda87;  --vs: #00e5a0;
+      --vw: #ff6b7a; --w: #ffa502; --m: #ffc107;
+      --s: #10b981;  --vs: #06b6d4;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      background: var(--bg);
+      background: linear-gradient(135deg, #f0f4f9 0%, #e3f2fd 50%, #f0f4f9 100%);
       color: var(--text);
       font-family: var(--sans);
       min-height: 100vh;
@@ -36,26 +36,57 @@
     }
 
     header {
-      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      width: 100%;
+      max-width: 540px;
+    }
+    header > div:first-child {
+      flex: 1;
     }
     header h1 {
       font-family: var(--mono);
       font-size: clamp(1.8rem, 5vw, 2.8rem);
       letter-spacing: -.03em;
       color: var(--accent);
+      font-weight: 700;
     }
     header p {
       color: var(--muted);
       font-size: .9rem;
       margin-top: .35rem;
+      font-weight: 500;
+    }
+
+    .logout-btn {
+      background: linear-gradient(135deg, #ff6b7a, #ff4757);
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-family: var(--sans);
+      font-size: .85rem;
+      padding: .65rem 1.25rem;
+      border-radius: 8px;
+      transition: all .2s;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(255, 71, 87, 0.2);
+    }
+    .logout-btn:hover {
+      background: linear-gradient(135deg, #ff5566, #ff3347);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(255, 71, 87, 0.3);
     }
 
     .tabs {
       display: flex;
       gap: .5rem;
       background: var(--surface);
-      border: 1px solid var(--border);
-      padding: .35rem;
+      border: 2px solid var(--border);
+      padding: .5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(30, 144, 255, 0.1);
     }
     .tab-btn {
       background: none;
@@ -63,22 +94,26 @@
       color: var(--muted);
       font-family: var(--sans);
       font-size: .9rem;
-      padding: .5rem 1.25rem;
+      padding: .65rem 1.25rem;
       cursor: pointer;
-      transition: background .15s, color .15s;
+      transition: all .2s;
+      font-weight: 600;
+      border-radius: 8px;
     }
-    .tab-btn:hover  { color: var(--text); }
-    .tab-btn.active { background: var(--accent-dim); color: var(--text); }
+    .tab-btn:hover  { color: var(--accent); background: rgba(30, 144, 255, 0.05); }
+    .tab-btn.active { background: linear-gradient(135deg, #e3f2fd, #bbdefb); color: var(--accent); }
 
     .card {
       width: 100%;
       max-width: 540px;
       background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 1.75rem;
+      border: 2px solid var(--border);
+      padding: 2rem;
       display: flex;
       flex-direction: column;
       gap: 1.1rem;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(30, 144, 255, 0.15);
     }
 
     .panel { display: none; flex-direction: column; gap: 1.1rem; }
@@ -86,26 +121,33 @@
 
     label {
       font-size: .78rem;
-      color: #0d0d0d;
+      color: var(--text);
       letter-spacing: .06em;
       text-transform: uppercase;
+      font-weight: 700;
     }
-    .field { display: flex; flex-direction: column; gap: .4rem; }
+    .field { display: flex; flex-direction: column; gap: .5rem; }
 
     input[type="text"],
     input[type="password"],
-    input[type="number"] {
-      background: #dcdcdc;
-      border: 1px solid var(--border);
-      color: #262424;
+    input[type="number"],
+    input[type="email"] {
+      background: #f8fbff;
+      border: 2px solid var(--border);
+      color: var(--text);
       font-family: var(--mono);
       font-size: .95rem;
-      padding: .65rem .85rem;
+      padding: .75rem 1rem;
       outline: none;
-      transition: border-color .15s;
+      transition: all .2s;
       width: 100%;
+      border-radius: 8px;
     }
-    input:focus { border-color: var(--accent); }
+    input:focus { 
+      border-color: var(--accent);
+      background: white;
+      box-shadow: 0 0 0 3px rgba(30, 144, 255, 0.1);
+    }
 
     .pwd-row {
       display: flex;
@@ -115,23 +157,32 @@
     .pwd-row input { flex: 1; }
 
     .btn {
-      background: var(--accent-dim);
+      background: linear-gradient(135deg, #1e90ff, #4a90e2);
       border: none;
-      color: var(--text);
+      color: white;
       cursor: pointer;
       font-family: var(--sans);
       font-size: .9rem;
-      font-weight: 600;
-      padding: .65rem 1.25rem;
-      transition: background .15s, transform .08s;
+      font-weight: 700;
+      padding: .75rem 1.5rem;
+      transition: all .2s;
       white-space: nowrap;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(30, 144, 255, 0.2);
     }
-    .btn:hover   { background: var(--accent); }
-    .btn:active  { transform: scale(.97); }
-    .btn.danger  { background: #3d1a1e; color: var(--danger); }
-    .btn.danger:hover { background: var(--danger); color: #fff; }
+    .btn:hover   { 
+      background: linear-gradient(135deg, #1a7fdb, #3d85d8);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(30, 144, 255, 0.3);
+    }
+    .btn:active  { transform: translateY(0); }
+    .btn.danger  { background: linear-gradient(135deg, #ff6b7a, #ff4757); box-shadow: 0 4px 12px rgba(255, 71, 87, 0.2); }
+    .btn.danger:hover { 
+      background: linear-gradient(135deg, #ff5566, #ff3347);
+      box-shadow: 0 6px 16px rgba(255, 71, 87, 0.3);
+    }
     .btn.full    { width: 100%; }
-    .btn.icon    { padding: .65rem .8rem; font-size: 1rem; }
+    .btn.icon    { padding: .65rem .8rem; font-size: 1rem; min-width: 44px; }
 
     .strength-row {
       display: flex;
@@ -140,7 +191,7 @@
     }
     .strength-bar {
       flex: 1;
-      height: 6px;
+      height: 8px;
       background: var(--border);
       border-radius: 99px;
       overflow: hidden;
@@ -148,63 +199,77 @@
     .strength-bar-fill {
       height: 100%;
       border-radius: 99px;
-      transition: width .3s, background .3s;
+      transition: width .3s cubic-bezier(0.4, 0, 0.2, 1), background .3s;
       width: 0;
+      box-shadow: 0 2px 8px rgba(30, 144, 255, 0.3);
     }
     .strength-label {
       font-family: var(--mono);
       font-size: .78rem;
-      min-width: 72px;
+      min-width: 80px;
       text-align: right;
+      font-weight: 700;
+      color: var(--accent);
     }
 
     .suggestions {
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: .3rem;
+      gap: .4rem;
     }
     .suggestions li {
       font-size: .83rem;
       color: var(--muted);
-      padding-left: 1rem;
+      padding-left: 1.5rem;
       position: relative;
+      background: rgba(30, 144, 255, 0.03);
+      padding: .5rem .75rem .5rem 1.5rem;
+      border-radius: 6px;
     }
     .suggestions li::before {
-      content: "›";
+      content: "✓";
       position: absolute;
-      left: 0;
+      left: .5rem;
       color: var(--accent);
+      font-weight: 700;
     }
 
     .vault-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 1rem;
     }
-    .vault-header h2 { font-size: 1rem; }
-    .vault-list { display: flex; flex-direction: column; gap: .6rem; }
+    .vault-header h2 { font-size: 1.1rem; color: var(--text); font-weight: 700; }
+    .vault-list { display: flex; flex-direction: column; gap: .8rem; }
     .vault-entry {
-      background: #ffffff;
-      border: 1px solid var(--border);
-      padding: .75rem 1rem;
+      background: linear-gradient(135deg, #f8fbff, #ffffff);
+      border: 2px solid var(--border);
+      padding: 1rem;
       display: flex;
       align-items: center;
       gap: .75rem;
+      border-radius: 10px;
+      transition: all .2s;
+    }
+    .vault-entry:hover {
+      border-color: var(--accent);
+      box-shadow: 0 4px 12px rgba(30, 144, 255, 0.1);
     }
     .vault-entry-info { flex: 1; min-width: 0; }
     .vault-entry-user {
-      font-weight: 600;
+      font-weight: 700;
       font-size: .9rem;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      color: #000000;
+      color: var(--text);
     }
     .vault-entry-pwd {
       font-family: var(--mono);
       font-size: .82rem;
-      color: #000000;
+      color: var(--muted);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -214,11 +279,23 @@
       text-align: center;
       color: var(--muted);
       font-size: .88rem;
-      padding: 1.5rem 0;
+      padding: 2rem 0;
+      font-style: italic;
     }
 
     #tab-about {
       text-align: center;
+      color: var(--muted);
+    }
+    #tab-about a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 700;
+      transition: all .2s;
+    }
+    #tab-about a:hover {
+      color: var(--accent-dim);
+      text-decoration: underline;
     }
 
     #toast {
@@ -227,14 +304,18 @@
       left: 50%;
       transform: translateX(-50%) translateY(1rem);
       background: var(--surface);
-      border: 1px solid var(--border);
-      padding: .65rem 1.25rem;
+      border: 2px solid var(--accent);
+      padding: .75rem 1.5rem;
       font-size: .88rem;
       opacity: 0;
       pointer-events: none;
       transition: opacity .2s, transform .2s;
       z-index: 99;
       white-space: nowrap;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(30, 144, 255, 0.2);
+      color: var(--text);
+      font-weight: 600;
     }
     #toast.show {
       opacity: 1;
@@ -255,108 +336,24 @@
       font-size: .88rem;
       min-width: 28px;
       text-align: right;
+      font-weight: 700;
+      color: var(--accent);
     }
-    /* legacy reset and layout tweaks */
-    header, main, nav, footer, figure, figcaption, aside, section, article { display: block; }
-    body { background-color: var(--bg); }
-    .table-content { overflow: auto; width:100%; }
-    #wrapper {
-      margin-left: auto;
-      margin-right: auto;
-      width: 80%;
-      background-color: #0C3A75;
-      background-image: linear-gradient(to bottom, #0C3A75, #071f43);
-      min-width: 900px;
-      max-width: 2050px;
-      box-shadow: 4px 4px 4px #133926;
-      border: 1.5pt solid #003300;
-      overflow: hidden;
+
+    @media only screen and (max-width: 64em) {
+      body { padding: 1.5rem 1rem 2rem; }
+      .card { padding: 1.5rem; }
+      header { flex-direction: column; gap: 1rem; }
+      .logout-btn { width: 100%; }
     }
-    img { display: inline-block; vertical-align: middle; border: 0; }
-    @media only screen and (max-width: 64em) { body { margin: 0; background-color: #380eaa; }
-#wrapper {
-    min-width: 0;
-    width: auto;
-    box-shadow: none;
-    border: none;
-}
 
-header {
-    padding: 0.5em 0;
-    padding-left: 0;
-    height: auto;
-}
-
-h1 {
-    letter-spacing: 0.1em;
-}
-
-main {
-    margin-left: 0;
-}
-
-nav {
-    float: none;
-    width: auto;
-    text-align: center;
-    padding: 0.5em;
-}
-
-nav li {
-    display: inline;
-    padding: 0.25em 0.75em;
-}
-
-footer {
-    margin-left: 0;
-}
-
-.image-container {
-    margin-left: auto;
-    margin-right: auto;
-    height: 200px;
-}
- 
-}
-@media only screen and (max-width: 37.5em) { label { float: none; text-align: left; }
-input[type="submit"] {
-    margin-left: 0;
-}
-
-main {
-    padding: 0.1em 1em;
-}
-
-h1 {
-    font-size: 2em;
-}
-
-nav {
-    padding: 0;
-}
-
-nav li {
-    display: block;
-    margin: 0;
-    border-bottom: 2px solid;
-}
-nav a:link {
-    display: block;
-}
-
-.image-container {
-    background-image: none;
-    height: 0;
-}
-
-#mobile {
-    display: inline;
-}
-
-#desktop {
-    display: none;
-}
-
+    @media only screen and (max-width: 37.5em) {
+      header h1 { font-size: 1.5rem; }
+      .card { padding: 1rem; }
+      .btn { padding: .65rem 1rem; font-size: .85rem; }
+      .tabs { flex-wrap: wrap; }
+      .tab-btn { padding: .5rem .75rem; font-size: .8rem; }
+    }
   </style>
   
 </head>
@@ -364,8 +361,11 @@ nav a:link {
 <body>
 
 <header>
-  <h1>🛡️Password Central</h1>
-  <p>Generate · Review · Store · Learn</p>
+  <div>
+    <h1>🛡️Password Central</h1>
+    <p>Generate · Review · Store · Learn</p>
+  </div>
+  <button class="logout-btn" id="logout-btn" title="Log out and clear session">Log out</button>
 </header>
 
 <div class="tabs">
@@ -481,22 +481,42 @@ nav a:link {
   }
 
   let currentUserEmail = "";
+  let currentUserId = null;
+  let isAuthenticated = false;
 
   async function api(path, opts = {}) {
     const res = await fetch(path, opts);
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
+      // If unauthorized, immediately redirect to login
+      if (res.status === 403 || res.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
       throw new Error(err.error || "Request failed");
     }
     return res.json();
   }
 
   async function initApp() {
-    const me = await api("/api/me").catch(() => null);
-    if (!me || !me.loggedIn) {
+    try {
+      const me = await api("/api/me").catch(() => null);
+      if (!me || !me.loggedIn) {
+        // Clear all data immediately
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "/login";
+        return;
+      }
+      currentUserEmail = me.email || "";
+      currentUserId = me.userId || null;
+      isAuthenticated = true;
+    } catch (e) {
+      // Any error during auth check means redirect to login
+      localStorage.clear();
+      sessionStorage.clear();
       window.location.href = "/login";
     }
-    currentUserEmail = me.email || "";
   }
 
   document.querySelectorAll(".tab-btn").forEach(btn => {
@@ -513,6 +533,54 @@ nav a:link {
 
   initApp();
 
+  // Logout functionality with complete data clearing
+  async function logout() {
+    try {
+      // Clear all client data first
+      localStorage.clear();
+      sessionStorage.clear();
+      // Clear form inputs
+      document.querySelectorAll("input[type='text'], input[type='password']").forEach(el => el.value = "");
+      // Notify server
+      await api("/api/logout", { method: "POST" });
+    } catch (e) {
+      console.error("Logout error:", e);
+    } finally {
+      // Always redirect to login even if API call fails
+      isAuthenticated = false;
+      currentUserEmail = "";
+      currentUserId = null;
+      window.location.href = "/login";
+    }
+  }
+
+  // Handle logout button click
+  document.getElementById("logout-btn").addEventListener("click", logout);
+
+  // Auto-logout when user leaves the page
+  window.addEventListener("beforeunload", (event) => {
+    if (!isAuthenticated) return;
+    // Use sendBeacon to ensure the logout request is sent even if page is unloading
+    navigator.sendBeacon("/api/logout");
+  });
+
+  // Prevent back button after logout
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) {
+      // User pressed back button - verify auth
+      initApp();
+    }
+  });
+
+  // Guard against accessing app without login
+  document.querySelectorAll(".tab-btn, .panel").forEach(el => {
+    el.addEventListener("click", (e) => {
+      if (!isAuthenticated) {
+        e.preventDefault();
+        window.location.href = "/login";
+      }
+    });
+  });
 
   const lenSlider = document.getElementById("gen-length");
   const lenVal    = document.getElementById("gen-length-val");
@@ -594,6 +662,11 @@ nav a:link {
 
 
   async function loadVault() {
+    // Guard: must be authenticated
+    if (!isAuthenticated) {
+      window.location.href = "/login";
+      return;
+    }
     const list = document.getElementById("vault-list");
     list.innerHTML = `<p class="vault-empty">Loading…</p>`;
     try {
@@ -613,7 +686,9 @@ nav a:link {
           <button class="btn icon danger" onclick="deleteEntry(${e.id})" title="Delete">✕</button>
         </div>
       `).join("");
-    } catch (e) { list.innerHTML = `<p class="vault-empty">Failed to load.</p>`; }
+    } catch (e) { 
+      list.innerHTML = `<p class="vault-empty">Failed to load.</p>`; 
+    }
   }
 
   function escHtml(s) {

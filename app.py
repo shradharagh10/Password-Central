@@ -3,8 +3,10 @@ import string
 import secrets
 import random
 import sqlite3
+import time
+from functools import wraps
 
-from flask import Flask, request, jsonify, send_from_directory, session
+from flask import Flask, request, jsonify, send_from_directory, session, redirect
 from cryptography.fernet import Fernet
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -12,6 +14,32 @@ app = Flask(__name__, static_folder="static")
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or Fernet.generate_key()
 
 KEY_FILE = "secret.key"
+
+# Rate limiting decorator
+def rate_limit(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        ip = request.remote_addr
+        now = time.time()
+        
+        if ip not in REQUEST_HISTORY:
+            REQUEST_HISTORY[ip] = []
+        
+        # Clean old requests (older than 60 seconds)
+        REQUEST_HISTORY[ip] = [t for t in REQUEST_HISTORY[ip] if now - t < 60]
+        
+        # Check rate limit
+        if len(REQUEST_HISTORY[ip]) >= RATE_LIMIT:
+            return redirect(RICK_ROLL_URL)
+        
+        REQUEST_HISTORY[ip].append(now)
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Rate limiting storage
+REQUEST_HISTORY = {}
+RATE_LIMIT = 100  # requests per minute
+RICK_ROLL_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
 def load_key():
     if not os.path.exists(KEY_FILE):
@@ -52,6 +80,13 @@ def get_db():
             value TEXT NOT NULL
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS generated_passwords (
+            id       INTEGER PRIMARY KEY AUTOINCREMENT,
+            password TEXT NOT NULL UNIQUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     conn.commit()
 
     columns = [row[1] for row in conn.execute("PRAGMA table_info(passwords)").fetchall()]
@@ -88,20 +123,47 @@ def require_user():
     return get_current_user()
 
 
-SPECIAL_CHARACTERS = "@_!?$^&"
+SPECIAL_CHARACTERS = "@_!?$^&*#%"
 
-def generate_password(length=12):
+def generate_password(length=12, max_attempts=100):
+    """Generate a unique password that hasn't been generated before."""
+    db = get_db()
     alphabet = string.ascii_letters + string.digits + SPECIAL_CHARACTERS
-    password = [
-        secrets.choice(string.ascii_lowercase),
-        secrets.choice(string.ascii_uppercase),
-        secrets.choice(string.digits),
-        secrets.choice(SPECIAL_CHARACTERS),
-    ]
-    while len(password) < length:
-        password.append(secrets.choice(alphabet))
-    random.shuffle(password)
-    return "".join(password)
+    
+    for attempt in range(max_attempts):
+        password = [
+            secrets.choice(string.ascii_lowercase),
+            secrets.choice(string.ascii_uppercase),
+            secrets.choice(string.digits),
+            secrets.choice(SPECIAL_CHARACTERS),
+        ]
+        while len(password) < length:
+            password.append(secrets.choice(alphabet))
+        random.shuffle(password)
+        pwd_str = "".join(password)
+        
+        # Check if password already exists
+        existing = db.execute(
+            "SELECT id FROM generated_passwords WHERE password = ?", 
+            (pwd_str,)
+        ).fetchone()
+        
+        if not existing:
+            # Store this password to prevent future repeats
+            try:
+                db.execute(
+                    "INSERT INTO generated_passwords (password) VALUES (?)",
+                    (pwd_str,)
+                )
+                db.commit()
+                db.close()
+                return pwd_str
+            except:
+                pass  # Duplicate, try again
+    
+    db.close()
+    # Fallback if somehow we can't generate a unique password
+    return "".join(secrets.choice(alphabet) for _ in range(length))
 
 def check_password_strength(password):
     score = sum([
@@ -130,14 +192,28 @@ def get_password_suggestions(password):
 
 
 @app.route("/")
+@rate_limit
 def index():
+    user = get_current_user()
+    if not user:
+        return send_from_directory("static", "login.html")
     return send_from_directory("static", "index.html")
 
 @app.route("/login")
+@rate_limit
 def login_page():
+    user = get_current_user()
+    if user:
+        return jsonify({"redirectTo": "/"}), 301
     return send_from_directory("static", "login.html")
 
+@app.route("/rickroll")
+def rickroll():
+    """Redirect to rick roll for security violations."""
+    return redirect(RICK_ROLL_URL)
+
 @app.route("/api/generate", methods=["GET"])
+@rate_limit
 def api_generate():
     length = request.args.get("length", 12, type=int)
     length = max(8, min(64, length))          # clamp to sane range
@@ -145,6 +221,7 @@ def api_generate():
     return jsonify({"password": pwd, "strength": check_password_strength(pwd)})
 
 @app.route("/api/review", methods=["POST"])
+@rate_limit
 def api_review():
     data = request.get_json(force=True)
     password = data.get("password", "")
@@ -154,6 +231,7 @@ def api_review():
     })
 
 @app.route("/api/save", methods=["POST"])
+@rate_limit
 def api_save():
     user = require_user()
     if not user:
@@ -174,6 +252,7 @@ def api_save():
     return jsonify({"message": "Password saved successfully."})
 
 @app.route("/api/passwords", methods=["GET"])
+@rate_limit
 def api_passwords():
     user = require_user()
     if not user:
@@ -196,6 +275,7 @@ def api_passwords():
     return jsonify(results)
 
 @app.route("/api/signup", methods=["POST"])
+@rate_limit
 def api_signup():
     data = request.get_json(force=True)
     email = data.get("email", "").strip().lower()
@@ -217,6 +297,7 @@ def api_signup():
     return jsonify({"message": "Account created and logged in."})
 
 @app.route("/api/login", methods=["POST"])
+@rate_limit
 def api_login():
     data = request.get_json(force=True)
     email = data.get("email", "").strip().lower()
@@ -235,13 +316,15 @@ def api_login():
 
 @app.route("/api/logout", methods=["POST"])
 def api_logout():
-    session.pop("user_id", None)
+    session.clear()
     return jsonify({"message": "Logged out."})
 
 @app.route("/api/me", methods=["GET"])
 def api_me():
     user = get_current_user()
-    return jsonify({"loggedIn": bool(user), "email": user["email"] if user else None})
+    if user:
+        return jsonify({"loggedIn": True, "email": user["email"], "userId": user["id"]})
+    return jsonify({"loggedIn": False, "email": None, "userId": None})
 
 @app.route("/api/passwords/<int:entry_id>", methods=["DELETE"])
 def api_delete(entry_id):
@@ -253,6 +336,37 @@ def api_delete(entry_id):
     db.commit()
     db.close()
     return jsonify({"message": "Entry deleted."})
+
+# Security error handlers - redirect to rick roll on bypass attempts
+@app.errorhandler(403)
+def forbidden(e):
+    """Anyone trying to access forbidden resources gets rick rolled."""
+    return redirect(RICK_ROLL_URL)
+
+@app.errorhandler(401)
+def unauthorized(e):
+    """Anyone trying unauthorized actions gets rick rolled."""
+    return redirect(RICK_ROLL_URL)
+
+@app.errorhandler(404)
+def not_found(e):
+    """Trying to access non-existent endpoints gets rick rolled."""
+    ip = request.remote_addr
+    # Log suspicious activity
+    print(f"[SECURITY] Suspicious access attempt from {ip} to {request.path}")
+    return redirect(RICK_ROLL_URL)
+
+@app.before_request
+def security_checks():
+    """Validate all requests for security."""
+    # Check for common attack patterns
+    if any(pattern in request.path.lower() for pattern in ['admin', 'config', 'debug', 'sql']):
+        return redirect(RICK_ROLL_URL)
+    
+    # Validate request headers
+    if request.method in ['POST', 'PUT', 'DELETE']:
+        if request.content_length and request.content_length > 1024 * 100:  # 100KB limit
+            return redirect(RICK_ROLL_URL)
 
 if __name__ == "__main__":
     app.run(debug=True)
