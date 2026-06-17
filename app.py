@@ -122,6 +122,9 @@ def get_current_user():
 def require_user():
     return get_current_user()
 
+def is_api_request():
+    return request.path.startswith("/api/")
+
 
 SPECIAL_CHARACTERS = "@_!?$^&*#%"
 
@@ -196,7 +199,7 @@ def get_password_suggestions(password):
 def index():
     user = get_current_user()
     if not user:
-        return send_from_directory("static", "login.html")
+        return redirect("/login")
     return send_from_directory("static", "index.html")
 
 @app.route("/login")
@@ -204,7 +207,7 @@ def index():
 def login_page():
     user = get_current_user()
     if user:
-        return jsonify({"redirectTo": "/"}), 301
+        return redirect("/")
     return send_from_directory("static", "login.html")
 
 @app.route("/rickroll")
@@ -341,11 +344,15 @@ def api_delete(entry_id):
 @app.errorhandler(403)
 def forbidden(e):
     """Anyone trying to access forbidden resources gets rick rolled."""
+    if is_api_request():
+        return jsonify({"error": "Forbidden."}), 403
     return redirect(RICK_ROLL_URL)
 
 @app.errorhandler(401)
 def unauthorized(e):
     """Anyone trying unauthorized actions gets rick rolled."""
+    if is_api_request():
+        return jsonify({"error": "Unauthorized."}), 401
     return redirect(RICK_ROLL_URL)
 
 @app.errorhandler(404)
@@ -354,6 +361,8 @@ def not_found(e):
     ip = request.remote_addr
     # Log suspicious activity
     print(f"[SECURITY] Suspicious access attempt from {ip} to {request.path}")
+    if is_api_request():
+        return jsonify({"error": "Not found."}), 404
     return redirect(RICK_ROLL_URL)
 
 @app.before_request
