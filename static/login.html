@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Password Central - Login</title>
+  <style>
+    body {
+      background: #071f43;
+      color: #fff;
+      font-family: 'Inter', system-ui, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 1rem;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      padding: 2rem;
+      border-radius: 18px;
+      box-shadow: 0 24px 64px rgba(0,0,0,.25);
+      backdrop-filter: blur(8px);
+    }
+    h1 {
+      margin: 0 0 1rem;
+      font-size: 2rem;
+      letter-spacing: .06em;
+      text-align: center;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      margin-bottom: 1rem;
+    }
+    .field label {
+      font-size: .85rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #98a8cb;
+    }
+    input {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,.2);
+      background: rgba(255,255,255,.08);
+      color: #fff;
+      padding: .85rem 1rem;
+      border-radius: 12px;
+      outline: none;
+      font-size: 1rem;
+    }
+    input::placeholder {
+      color: rgba(255,255,255,.6);
+    }
+    .btn {
+      width: 100%;
+      padding: .95rem;
+      border: none;
+      background: #1d6eff;
+      color: #fff;
+      border-radius: 12px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform .15s, background .15s;
+    }
+    .btn:hover {
+      background: #3d84ff;
+      transform: translateY(-1px);
+    }
+    .secondary {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.3);
+      margin-top: .75rem;
+    }
+    .secondary:hover {
+      background: rgba(255,255,255,.05);
+    }
+    #message {
+      margin-bottom: 1rem;
+      min-height: 1.25rem;
+      color: #f9c74f;
+      font-size: .95rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <h1>Password Central</h1>
+    <div id="message"></div>
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="you@example.com" />
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Enter your password" />
+    </div>
+    <button class="btn" id="login-btn">Log in</button>
+    <button class="btn secondary" id="signup-btn">Sign up</button>
+  </div>
+
+  <script>
+    const message = document.getElementById('message');
+    function showMessage(text, isError = false) {
+      message.textContent = text;
+      message.style.color = isError ? '#ff8d8d' : '#f9c74f';
+    }
+
+    async function request(path, body) {
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Request failed');
+      return data;
+    }
+
+    async function initLoginPage() {
+      const res = await fetch('/api/me').catch(() => null);
+      if (res) {
+        const data = await res.json().catch(() => null);
+        if (data?.loggedIn) {
+          window.location.href = '/';
+          return;
+        }
+      }
+    }
+
+    document.getElementById('login-btn').addEventListener('click', async () => {
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const password = document.getElementById('password').value;
+      if (!email || !password) {
+        showMessage('Both email and password are required.', true);
+        return;
+      }
+      try {
+        await request('/api/login', { email, password });
+        window.location.href = '/';
+      } catch (err) {
+        showMessage(err.message, true);
+      }
+    });
+
+    document.getElementById('signup-btn').addEventListener('click', async () => {
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const password = document.getElementById('password').value;
+      if (!email || !password) {
+        showMessage('Both email and password are required.', true);
+        return;
+      }
+      try {
+        await request('/api/signup', { email, password });
+        window.location.href = '/';
+      } catch (err) {
+        showMessage(err.message, true);
+      }
+    });
+    initLoginPage();
+  </script>
+</body>
+</html>

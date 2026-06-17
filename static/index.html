@@ -578,7 +578,6 @@ nav a:link {
   });
 
   document.getElementById("rev-save-btn").addEventListener("click", async () => {
-    const username = document.getElementById("rev-username").value.trim();
     const app = document.getElementById("rev-app").value.trim();
     const password = document.getElementById("rev-input").value;
     if (!app) { toast("Enter the app or service name."); return; }
@@ -586,10 +585,9 @@ nav a:link {
       await api("/api/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, app }),
+        body: JSON.stringify({ username: app, password, app }),
       });
       toast("✓ Saved to vault");
-      document.getElementById("rev-username").value = "";
       document.getElementById("rev-app").value = "";
     } catch (e) { toast("⚠ " + e.message); }
   });
